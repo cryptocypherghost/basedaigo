@@ -29,9 +29,15 @@ import (
 	"github.com/ava-labs/avalanchego/vms/platformvm/txs/mempool"
 )
 
-func TestVerifierVisitProposalBlock(t *testing.T) {
+func TestVerifierVisitApricotProposalBlock(t *testing.T) {
 	require := require.New(t)
 	ctrl := gomock.NewController(t)
+
+	config := &config.Config{
+		BanffTime:   mockable.MaxTime, // banff is not activated
+		CortinaTime: mockable.MaxTime, // cortina is not activate
+		DTime:       mockable.MaxTime, // DFork is not activated
+	}
 
 	s := state.NewMockState(ctrl)
 	mempool := mempool.NewMockMempool(ctrl)
@@ -58,10 +64,8 @@ func TestVerifierVisitProposalBlock(t *testing.T) {
 	}
 	verifier := &verifier{
 		txExecutorBackend: &executor.Backend{
-			Config: &config.Config{
-				BanffTime: mockable.MaxTime, // banff is not activated
-			},
-			Clk: &mockable.Clock{},
+			Config: config,
+			Clk:    &mockable.Clock{},
 		},
 		backend: backend,
 	}
@@ -145,6 +149,8 @@ func TestVerifierVisitAtomicBlock(t *testing.T) {
 			Config: &config.Config{
 				ApricotPhase5Time: time.Now().Add(time.Hour),
 				BanffTime:         mockable.MaxTime, // banff is not activated
+				CortinaTime:       mockable.MaxTime, // cortina is not activate
+				DTime:             mockable.MaxTime, // DFork is not activated
 			},
 			Clk: &mockable.Clock{},
 		},
@@ -203,9 +209,15 @@ func TestVerifierVisitAtomicBlock(t *testing.T) {
 	require.NoError(blk.Verify(context.Background()))
 }
 
-func TestVerifierVisitStandardBlock(t *testing.T) {
+func TestVerifierVisitApricotStandardBlock(t *testing.T) {
 	require := require.New(t)
 	ctrl := gomock.NewController(t)
+
+	config := &config.Config{
+		BanffTime:   mockable.MaxTime, // banff is not activated
+		CortinaTime: mockable.MaxTime, // cortina is not activate
+		DTime:       mockable.MaxTime, // DFork is not activated
+	}
 
 	// Create mocked dependencies.
 	s := state.NewMockState(ctrl)
@@ -229,11 +241,8 @@ func TestVerifierVisitStandardBlock(t *testing.T) {
 	}
 	verifier := &verifier{
 		txExecutorBackend: &executor.Backend{
-			Config: &config.Config{
-				ApricotPhase5Time: time.Now().Add(time.Hour),
-				BanffTime:         mockable.MaxTime, // banff is not activated
-			},
-			Clk: &mockable.Clock{},
+			Config: config,
+			Clk:    &mockable.Clock{},
 		},
 		backend: backend,
 	}
@@ -302,7 +311,7 @@ func TestVerifierVisitStandardBlock(t *testing.T) {
 	require.NoError(blk.Verify(context.Background()))
 }
 
-func TestVerifierVisitCommitBlock(t *testing.T) {
+func TestVerifierVisitApricotCommitBlock(t *testing.T) {
 	require := require.New(t)
 	ctrl := gomock.NewController(t)
 
@@ -334,7 +343,9 @@ func TestVerifierVisitCommitBlock(t *testing.T) {
 	verifier := &verifier{
 		txExecutorBackend: &executor.Backend{
 			Config: &config.Config{
-				BanffTime: mockable.MaxTime, // banff is not activated
+				BanffTime:   mockable.MaxTime, // banff is not activated
+				CortinaTime: mockable.MaxTime, // cortina is not activate
+				DTime:       mockable.MaxTime, // DFork is not activated
 			},
 			Clk: &mockable.Clock{},
 		},
@@ -372,7 +383,7 @@ func TestVerifierVisitCommitBlock(t *testing.T) {
 	require.NoError(blk.Verify(context.Background()))
 }
 
-func TestVerifierVisitAbortBlock(t *testing.T) {
+func TestVerifierVisitApricotAbortBlock(t *testing.T) {
 	require := require.New(t)
 	ctrl := gomock.NewController(t)
 
@@ -404,7 +415,8 @@ func TestVerifierVisitAbortBlock(t *testing.T) {
 	verifier := &verifier{
 		txExecutorBackend: &executor.Backend{
 			Config: &config.Config{
-				BanffTime: mockable.MaxTime, // banff is not activated
+				BanffTime:   mockable.MaxTime, // banff is not activated
+				CortinaTime: mockable.MaxTime, // cortina is not activate
 			},
 			Clk: &mockable.Clock{},
 		},
@@ -463,7 +475,9 @@ func TestVerifyUnverifiedParent(t *testing.T) {
 	verifier := &verifier{
 		txExecutorBackend: &executor.Backend{
 			Config: &config.Config{
-				BanffTime: mockable.MaxTime, // banff is not activated
+				BanffTime:   mockable.MaxTime, // banff is not activated
+				CortinaTime: mockable.MaxTime, // cortina is not activate
+				DTime:       mockable.MaxTime, // DFork is not activated
 			},
 			Clk: &mockable.Clock{},
 		},
@@ -517,6 +531,12 @@ func TestBanffAbortBlockTimestampChecks(t *testing.T) {
 		t.Run(test.description, func(t *testing.T) {
 			require := require.New(t)
 
+			config := &config.Config{
+				BanffTime:   time.Time{}, // banff is activated
+				CortinaTime: time.Time{},
+				DTime:       time.Time{},
+			}
+
 			// Create mocked dependencies.
 			s := state.NewMockState(ctrl)
 			mempool := mempool.NewMockMempool(ctrl)
@@ -534,10 +554,8 @@ func TestBanffAbortBlockTimestampChecks(t *testing.T) {
 			}
 			verifier := &verifier{
 				txExecutorBackend: &executor.Backend{
-					Config: &config.Config{
-						BanffTime: time.Time{}, // banff is activated
-					},
-					Clk: &mockable.Clock{},
+					Config: config,
+					Clk:    &mockable.Clock{},
 				},
 				backend: backend,
 			}
@@ -617,6 +635,11 @@ func TestBanffCommitBlockTimestampChecks(t *testing.T) {
 			parentStatelessBlk := block.NewMockBlock(ctrl)
 			parentHeight := uint64(1)
 
+			config := &config.Config{
+				BanffTime:   time.Time{}, // banff is activated
+				CortinaTime: time.Time{},
+				DTime:       time.Time{},
+			}
 			backend := &backend{
 				blkIDToState: make(map[ids.ID]*blockState),
 				Mempool:      mempool,
@@ -627,10 +650,8 @@ func TestBanffCommitBlockTimestampChecks(t *testing.T) {
 			}
 			verifier := &verifier{
 				txExecutorBackend: &executor.Backend{
-					Config: &config.Config{
-						BanffTime: time.Time{}, // banff is activated
-					},
-					Clk: &mockable.Clock{},
+					Config: config,
+					Clk:    &mockable.Clock{},
 				},
 				backend: backend,
 			}
@@ -671,6 +692,13 @@ func TestVerifierVisitStandardBlockWithDuplicateInputs(t *testing.T) {
 	require := require.New(t)
 	ctrl := gomock.NewController(t)
 
+	config := &config.Config{
+		ApricotPhase5Time: time.Now().Add(time.Hour),
+		BanffTime:         mockable.MaxTime, // banff is not activated
+		CortinaTime:       mockable.MaxTime, // cortina is not activate
+		DTime:             mockable.MaxTime, // DFork is not activated
+	}
+
 	// Create mocked dependencies.
 	s := state.NewMockState(ctrl)
 	mempool := mempool.NewMockMempool(ctrl)
@@ -705,11 +733,8 @@ func TestVerifierVisitStandardBlockWithDuplicateInputs(t *testing.T) {
 	}
 	verifier := &verifier{
 		txExecutorBackend: &executor.Backend{
-			Config: &config.Config{
-				ApricotPhase5Time: time.Now().Add(time.Hour),
-				BanffTime:         mockable.MaxTime, // banff is not activated
-			},
-			Clk: &mockable.Clock{},
+			Config: config,
+			Clk:    &mockable.Clock{},
 		},
 		backend: backend,
 	}
@@ -796,7 +821,9 @@ func TestVerifierVisitApricotStandardBlockWithProposalBlockParent(t *testing.T) 
 	verifier := &verifier{
 		txExecutorBackend: &executor.Backend{
 			Config: &config.Config{
-				BanffTime: mockable.MaxTime, // banff is not activated
+				BanffTime:   mockable.MaxTime, // banff is not activated
+				CortinaTime: mockable.MaxTime, // cortina is not activate
+				DTime:       mockable.MaxTime, // DFork is not activated
 			},
 			Clk: &mockable.Clock{},
 		},
@@ -854,7 +881,9 @@ func TestVerifierVisitBanffStandardBlockWithProposalBlockParent(t *testing.T) {
 	verifier := &verifier{
 		txExecutorBackend: &executor.Backend{
 			Config: &config.Config{
-				BanffTime: time.Time{}, // banff is activated
+				BanffTime:   time.Time{}, // banff is activated
+				CortinaTime: time.Time{},
+				DTime:       time.Time{},
 			},
 			Clk: &mockable.Clock{},
 		},
@@ -891,7 +920,9 @@ func TestVerifierVisitApricotCommitBlockUnexpectedParentState(t *testing.T) {
 	verifier := &verifier{
 		txExecutorBackend: &executor.Backend{
 			Config: &config.Config{
-				BanffTime: mockable.MaxTime, // banff is not activated
+				BanffTime:   mockable.MaxTime, // banff is not activated
+				CortinaTime: mockable.MaxTime, // cortina is not activate
+				DTime:       mockable.MaxTime, // DFork is not activated
 			},
 			Clk: &mockable.Clock{},
 		},
@@ -934,7 +965,9 @@ func TestVerifierVisitBanffCommitBlockUnexpectedParentState(t *testing.T) {
 	verifier := &verifier{
 		txExecutorBackend: &executor.Backend{
 			Config: &config.Config{
-				BanffTime: time.Time{}, // banff is activated
+				BanffTime:   time.Time{}, // banff is activated
+				CortinaTime: time.Time{},
+				DTime:       time.Time{},
 			},
 			Clk: &mockable.Clock{},
 		},
@@ -978,7 +1011,9 @@ func TestVerifierVisitApricotAbortBlockUnexpectedParentState(t *testing.T) {
 	verifier := &verifier{
 		txExecutorBackend: &executor.Backend{
 			Config: &config.Config{
-				BanffTime: mockable.MaxTime, // banff is not activated
+				BanffTime:   mockable.MaxTime, // banff is not activated
+				CortinaTime: mockable.MaxTime, // cortina is not activate
+				DTime:       mockable.MaxTime, // DFork is not activated
 			},
 			Clk: &mockable.Clock{},
 		},
@@ -1021,7 +1056,9 @@ func TestVerifierVisitBanffAbortBlockUnexpectedParentState(t *testing.T) {
 	verifier := &verifier{
 		txExecutorBackend: &executor.Backend{
 			Config: &config.Config{
-				BanffTime: time.Time{}, // banff is activated
+				BanffTime:   time.Time{}, // banff is activated
+				CortinaTime: time.Time{},
+				DTime:       time.Time{},
 			},
 			Clk: &mockable.Clock{},
 		},

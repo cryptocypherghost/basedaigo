@@ -160,7 +160,7 @@ func newEnvironment(t *testing.T) *environment {
 	metrics, err := metrics.New("", registerer)
 	require.NoError(err)
 
-	res.mempool, err = mempool.NewMempool("mempool", registerer, res)
+	res.mempool, err = mempool.NewMempool(res.config, res, "mempool", registerer)
 	require.NoError(err)
 
 	res.blkManager = blockexecutor.NewManager(
@@ -217,6 +217,9 @@ func addSubnet(t *testing.T, env *environment) {
 
 	stateDiff.AddTx(testSubnet1, status.Committed)
 	require.NoError(stateDiff.Apply(env.state))
+	require.NoError(env.state.Commit())
+
+	defaultBalance -= env.config.GetCreateSubnetTxFee(env.clk.Time())
 }
 
 func defaultState(
@@ -306,6 +309,8 @@ func defaultConfig() *config.Config {
 		ApricotPhase3Time: defaultValidateEndTime,
 		ApricotPhase5Time: defaultValidateEndTime,
 		BanffTime:         time.Time{}, // neglecting fork ordering this for package tests
+		CortinaTime:       time.Time{}, // neglecting fork ordering this for package tests
+		DTime:             time.Time{}, // neglecting fork ordering this for package tests
 	}
 }
 

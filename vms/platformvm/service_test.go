@@ -73,8 +73,8 @@ var (
 	}
 )
 
-func defaultService(t *testing.T) (*Service, *mutableSharedMemory) {
-	vm, _, mutableSharedMemory := defaultVM(t)
+func defaultService(t *testing.T, addSubnet bool) (*Service, *mutableSharedMemory) {
+	vm, _, mutableSharedMemory := defaultVM(t, latestFork, addSubnet)
 	vm.ctx.Lock.Lock()
 	defer vm.ctx.Lock.Unlock()
 	ks := keystore.New(logging.NoLog{}, manager.NewMemDB(version.Semantic1_0_0))
@@ -132,7 +132,7 @@ func TestExportKey(t *testing.T) {
 	args := ExportKeyArgs{}
 	require.NoError(stdjson.Unmarshal([]byte(jsonString), &args))
 
-	service, _ := defaultService(t)
+	service, _ := defaultService(t, false /*addSubnet*/)
 	defaultAddress(t, service)
 	defer func() {
 		service.vm.ctx.Lock.Lock()
@@ -152,7 +152,7 @@ func TestImportKey(t *testing.T) {
 	args := ImportKeyArgs{}
 	require.NoError(stdjson.Unmarshal([]byte(jsonString), &args))
 
-	service, _ := defaultService(t)
+	service, _ := defaultService(t, false /*addSubnet*/)
 	defer func() {
 		service.vm.ctx.Lock.Lock()
 		require.NoError(service.vm.Shutdown(context.Background()))
@@ -167,7 +167,7 @@ func TestImportKey(t *testing.T) {
 // Test issuing a tx and accepted
 func TestGetTxStatus(t *testing.T) {
 	require := require.New(t)
-	service, mutableSharedMemory := defaultService(t)
+	service, mutableSharedMemory := defaultService(t, false /*addSubnet*/)
 	defaultAddress(t, service)
 	service.vm.ctx.Lock.Lock()
 	defer func() {
@@ -322,7 +322,7 @@ func TestGetTx(t *testing.T) {
 			)
 			t.Run(testName, func(t *testing.T) {
 				require := require.New(t)
-				service, _ := defaultService(t)
+				service, _ := defaultService(t, true /*addSubnet*/)
 				defaultAddress(t, service)
 				service.vm.ctx.Lock.Lock()
 
@@ -392,7 +392,7 @@ func TestGetTx(t *testing.T) {
 
 func TestGetBalance(t *testing.T) {
 	require := require.New(t)
-	service, _ := defaultService(t)
+	service, _ := defaultService(t, false /*addSubnet*/)
 	defaultAddress(t, service)
 	defer func() {
 		service.vm.ctx.Lock.Lock()
@@ -421,7 +421,7 @@ func TestGetBalance(t *testing.T) {
 
 func TestGetStake(t *testing.T) {
 	require := require.New(t)
-	service, _ := defaultService(t)
+	service, _ := defaultService(t, false /*addSubnet*/)
 	defaultAddress(t, service)
 	defer func() {
 		service.vm.ctx.Lock.Lock()
@@ -497,11 +497,12 @@ func TestGetStake(t *testing.T) {
 	// Add a delegator
 	stakeAmount := service.vm.MinDelegatorStake + 12345
 	delegatorNodeID := ids.NodeID(keys[0].PublicKey().Address())
-	delegatorEndTime := uint64(defaultGenesisTime.Add(defaultMinStakingDuration).Unix())
+	delegatorStartTime := defaultGenesisTime
+	delegatorEndTime := defaultGenesisTime.Add(defaultMinStakingDuration)
 	tx, err := service.vm.txBuilder.NewAddDelegatorTx(
 		stakeAmount,
-		uint64(defaultGenesisTime.Unix()),
-		delegatorEndTime,
+		uint64(delegatorStartTime.Unix()),
+		uint64(delegatorEndTime.Unix()),
 		delegatorNodeID,
 		ids.GenerateTestShortID(),
 		[]*secp256k1.PrivateKey{keys[0]},
@@ -509,9 +510,11 @@ func TestGetStake(t *testing.T) {
 	)
 	require.NoError(err)
 
+	addDelTx := tx.Unsigned.(*txs.AddDelegatorTx)
 	staker, err := state.NewCurrentStaker(
 		tx.ID(),
-		tx.Unsigned.(*txs.AddDelegatorTx),
+		addDelTx,
+		delegatorStartTime,
 		0,
 	)
 	require.NoError(err)
@@ -594,7 +597,7 @@ func TestGetStake(t *testing.T) {
 
 func TestGetCurrentValidators(t *testing.T) {
 	require := require.New(t)
-	service, _ := defaultService(t)
+	service, _ := defaultService(t, false /*addSubnet*/)
 	defaultAddress(t, service)
 	defer func() {
 		service.vm.ctx.Lock.Lock()
@@ -629,15 +632,15 @@ func TestGetCurrentValidators(t *testing.T) {
 	// Add a delegator
 	stakeAmount := service.vm.MinDelegatorStake + 12345
 	validatorNodeID := ids.NodeID(keys[1].PublicKey().Address())
-	delegatorStartTime := uint64(defaultValidateStartTime.Unix())
-	delegatorEndTime := uint64(defaultValidateStartTime.Add(defaultMinStakingDuration).Unix())
+	delegatorStartTime := defaultGenesisStartTime
+	delegatorEndTime := defaultGenesisStartTime.Add(defaultMinStakingDuration)
 
 	service.vm.ctx.Lock.Lock()
 
 	delTx, err := service.vm.txBuilder.NewAddDelegatorTx(
 		stakeAmount,
-		delegatorStartTime,
-		delegatorEndTime,
+		uint64(delegatorStartTime.Unix()),
+		uint64(delegatorEndTime.Unix()),
 		validatorNodeID,
 		ids.GenerateTestShortID(),
 		[]*secp256k1.PrivateKey{keys[0]},
@@ -645,9 +648,11 @@ func TestGetCurrentValidators(t *testing.T) {
 	)
 	require.NoError(err)
 
+	addDelTx := delTx.Unsigned.(*txs.AddDelegatorTx)
 	staker, err := state.NewCurrentStaker(
 		delTx.ID(),
-		delTx.Unsigned.(*txs.AddDelegatorTx),
+		addDelTx,
+		delegatorStartTime,
 		0,
 	)
 	require.NoError(err)
@@ -689,8 +694,8 @@ func TestGetCurrentValidators(t *testing.T) {
 		require.Len(*innerVdr.Delegators, 1)
 		delegator := (*innerVdr.Delegators)[0]
 		require.Equal(delegator.NodeID, innerVdr.NodeID)
-		require.Equal(uint64(delegator.StartTime), delegatorStartTime)
-		require.Equal(uint64(delegator.EndTime), delegatorEndTime)
+		require.Equal(int64(delegator.StartTime), delegatorStartTime.Unix())
+		require.Equal(int64(delegator.EndTime), delegatorEndTime.Unix())
 		require.Equal(uint64(delegator.Weight), stakeAmount)
 	}
 	require.True(found)
@@ -723,7 +728,7 @@ func TestGetCurrentValidators(t *testing.T) {
 
 func TestGetTimestamp(t *testing.T) {
 	require := require.New(t)
-	service, _ := defaultService(t)
+	service, _ := defaultService(t, false /*addSubnet*/)
 	defer func() {
 		service.vm.ctx.Lock.Lock()
 		require.NoError(service.vm.Shutdown(context.Background()))
@@ -764,7 +769,7 @@ func TestGetBlock(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			require := require.New(t)
-			service, _ := defaultService(t)
+			service, _ := defaultService(t, true /*addSubnet*/)
 			service.vm.ctx.Lock.Lock()
 
 			service.vm.Config.CreateAssetTxFee = 100 * defaultTxFee

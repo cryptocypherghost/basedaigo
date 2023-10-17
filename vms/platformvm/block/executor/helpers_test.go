@@ -192,7 +192,7 @@ func newEnvironment(t *testing.T, ctrl *gomock.Controller) *environment {
 	metrics := metrics.Noop
 
 	var err error
-	res.mempool, err = mempool.NewMempool("mempool", registerer, res)
+	res.mempool, err = mempool.NewMempool(res.config, res, "mempool", registerer)
 	if err != nil {
 		panic(fmt.Errorf("failed to create mempool: %w", err))
 	}
@@ -259,6 +259,11 @@ func addSubnet(env *environment) {
 	if err := stateDiff.Apply(env.state); err != nil {
 		panic(err)
 	}
+	if err := env.state.Commit(); err != nil {
+		panic(err)
+	}
+
+	defaultBalance -= env.config.GetCreateSubnetTxFee(env.clk.Time())
 }
 
 func defaultState(
@@ -346,7 +351,9 @@ func defaultConfig() *config.Config {
 		},
 		ApricotPhase3Time: defaultValidateEndTime,
 		ApricotPhase5Time: defaultValidateEndTime,
-		BanffTime:         mockable.MaxTime,
+		BanffTime:         defaultValidateEndTime,
+		CortinaTime:       defaultValidateEndTime,
+		DTime:             defaultValidateEndTime,
 	}
 }
 
