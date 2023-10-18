@@ -3,12 +3,16 @@
 
 package state
 
-import "github.com/ava-labs/avalanchego/database"
+import (
+	"github.com/ava-labs/avalanchego/database"
+	"github.com/ava-labs/avalanchego/ids"
+)
 
 type delegatorMetadata struct {
-	PotentialReward uint64 `v0:"true"` // originally not parsed via codec but using ad-hoc utility
+	PotentialReward uint64 `v0:"true"`
+	StakerStartTime int64  `          v1:"true"`
 
-	StakerStartTime int64 `v1:"true"`
+	txID ids.ID
 }
 
 func parseDelegatorMetadata(bytes []byte, metadata *delegatorMetadata) error {
@@ -28,4 +32,12 @@ func parseDelegatorMetadata(bytes []byte, metadata *delegatorMetadata) error {
 		}
 	}
 	return nil
+}
+
+func writeDelegatorMetadata(db database.KeyValueWriter, metadata *delegatorMetadata) error {
+	metadataBytes, err := metadataCodec.Marshal(v1, metadata)
+	if err != nil {
+		return err
+	}
+	return db.Put(metadata.txID[:], metadataBytes)
 }
