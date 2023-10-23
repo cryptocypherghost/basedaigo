@@ -22,8 +22,8 @@ const (
 var metadataCodec codec.Manager
 
 func init() {
-	c0 := linearcodec.New([]string{v0tag}, linearcodec.DefaultMaxSliceLength)
-	c1 := linearcodec.New([]string{v0tag, v1tag}, linearcodec.DefaultMaxSliceLength)
+	c0 := linearcodec.New([]string{v0tag}, math.MaxInt32)
+	c1 := linearcodec.New([]string{v0tag, v1tag}, math.MaxInt32)
 	metadataCodec = codec.NewManager(math.MaxInt32)
 
 	errs := wrappers.Errs{}
