@@ -93,6 +93,11 @@ func (i *issuer) TransferSubnetOwnershipTx(*txs.TransferSubnetOwnershipTx) error
 	return nil
 }
 
+func (i *issuer) BaseTx(*txs.BaseTx) error {
+	i.m.addDecisionTx(i.tx)
+	return nil
+}
+
 func (i *issuer) AddPermissionlessValidatorTx(*txs.AddPermissionlessValidatorTx) error {
 	if i.m.cfg.IsDActivated(i.timestamp) {
 		i.m.addDecisionTx(i.tx)
