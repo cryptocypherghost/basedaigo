@@ -20,9 +20,9 @@ import (
 )
 
 const (
-	// targetTxSize is the maximum number of bytes a transaction can use to be
+	// MaxTxSize is the maximum number of bytes a transaction can use to be
 	// allowed into the mempool.
-	targetTxSize = 64 * units.KiB
+	MaxTxSize = 64 * units.KiB
 
 	// droppedTxIDsCacheSize is the maximum number of dropped txIDs to cache
 	droppedTxIDsCacheSize = 64
@@ -36,8 +36,10 @@ const (
 var (
 	_ Mempool = (*mempool)(nil)
 
-	errMempoolFull        = errors.New("mempool is full")
-	errTxAlreadyInMempool = errors.New("tx already in mempool")
+	errDuplicateTx          = errors.New("duplicate tx")
+	errTxTooLarge           = errors.New("tx too large")
+	errMempoolFull          = errors.New("mempool is full")
+	errConflictsWithOtherTx = errors.New("tx conflicts with other tx")
 )
 
 type BlockTimer interface {
@@ -105,7 +107,7 @@ type mempool struct {
 	blkTimer BlockTimer
 }
 
-func NewMempool(
+func New(
 	cfg *config.Config,
 	blkTimer BlockTimer,
 	namespace string,
@@ -168,25 +170,30 @@ func (m *mempool) Add(tx *txs.Tx, timestamp time.Time) error {
 	// Note: a previously dropped tx can be re-added
 	txID := tx.ID()
 	if m.Has(txID) {
-		return fmt.Errorf("%w, txID %s", errTxAlreadyInMempool, txID)
+		return fmt.Errorf("%w: %s", errDuplicateTx, txID)
 	}
 
-	txBytes := tx.Bytes()
-	if len(txBytes) > targetTxSize {
-		return fmt.Errorf("tx %s size (%d) > target size (%d)", txID, len(txBytes), targetTxSize)
+	txSize := len(tx.Bytes())
+	if txSize > MaxTxSize {
+		return fmt.Errorf("%w: %s size (%d) > max size (%d)",
+			errTxTooLarge,
+			txID,
+			txSize,
+			MaxTxSize,
+		)
 	}
-	if len(txBytes) > m.bytesAvailable {
-		return fmt.Errorf("%w, tx %s size (%d) exceeds available space (%d)",
+	if txSize > m.bytesAvailable {
+		return fmt.Errorf("%w: %s size (%d) > available space (%d)",
 			errMempoolFull,
 			txID,
-			len(txBytes),
+			txSize,
 			m.bytesAvailable,
 		)
 	}
 
 	inputs := tx.Unsigned.InputIDs()
 	if m.consumedUTXOs.Overlaps(inputs) {
-		return fmt.Errorf("tx %s conflicts with a transaction in the mempool", txID)
+		return fmt.Errorf("%w: %s", errConflictsWithOtherTx, txID)
 	}
 
 	if err := tx.Unsigned.Visit(&issuer{
@@ -307,4 +314,35 @@ func (m *mempool) deregister(tx *txs.Tx) {
 
 	inputs := tx.Unsigned.InputIDs()
 	m.consumedUTXOs.Difference(inputs)
+}
+
+// Drops all [txs.Staker] transactions whose [StartTime] is before
+// [minStartTime] from [mempool]. The dropped tx ids are returned.
+//
+// TODO: Remove once [StartTime] field is ignored in staker txs
+func DropExpiredStakerTxs(mempool Mempool, minStartTime time.Time) []ids.ID {
+	var droppedTxIDs []ids.ID
+
+	for mempool.HasStakerTx() {
+		tx := mempool.PeekStakerTx()
+		startTime := tx.Unsigned.(txs.PreDForkStaker).StartTime()
+		if !startTime.Before(minStartTime) {
+			// The next proposal tx in the mempool starts sufficiently far in
+			// the future.
+			break
+		}
+
+		txID := tx.ID()
+		err := fmt.Errorf(
+			"synchrony bound (%s) is later than staker start time (%s)",
+			minStartTime,
+			startTime,
+		)
+
+		mempool.Remove([]*txs.Tx{tx})
+		mempool.MarkDropped(txID, err) // cache tx as dropped
+		droppedTxIDs = append(droppedTxIDs, txID)
+	}
+
+	return droppedTxIDs
 }

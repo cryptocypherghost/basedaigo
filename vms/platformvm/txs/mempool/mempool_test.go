@@ -36,7 +36,7 @@ func TestBlockBuilderMaxMempoolSizeHandling(t *testing.T) {
 	require := require.New(t)
 
 	registerer := prometheus.NewRegistry()
-	mpool, err := NewMempool(&config.Config{}, &noopBlkTimer{}, "mempool", registerer)
+	mpool, err := New(&config.Config{}, &noopBlkTimer{}, "mempool", registerer)
 	require.NoError(err)
 
 	decisionTxs, err := createTestDecisionTxs(1)
@@ -60,7 +60,7 @@ func TestDecisionTxsInMempool(t *testing.T) {
 	require := require.New(t)
 
 	registerer := prometheus.NewRegistry()
-	mpool, err := NewMempool(&config.Config{}, &noopBlkTimer{}, "mempool", registerer)
+	mpool, err := New(&config.Config{}, &noopBlkTimer{}, "mempool", registerer)
 	require.NoError(err)
 
 	decisionTxs, err := createTestDecisionTxs(2)
@@ -112,7 +112,7 @@ func TestProposalTxsInMempool(t *testing.T) {
 	require := require.New(t)
 
 	registerer := prometheus.NewRegistry()
-	mpool, err := NewMempool(&config.Config{
+	mpool, err := New(&config.Config{
 		DTime: mockable.MaxTime,
 	}, &noopBlkTimer{}, "mempool", registerer)
 	require.NoError(err)
@@ -180,7 +180,7 @@ func TestContinuousStakingForkInMempool(t *testing.T) {
 
 	forkTime := time.Now()
 	registerer := prometheus.NewRegistry()
-	mpool, err := NewMempool(&config.Config{
+	mpool, err := New(&config.Config{
 		DTime: forkTime,
 	}, &noopBlkTimer{}, "mempool", registerer)
 	require.NoError(err)
@@ -199,7 +199,7 @@ func TestContinuousStakingForkInMempool(t *testing.T) {
 	// insert post fork
 	postForkTime := forkTime.Add(time.Second)
 	err = mpool.Add(tx, postForkTime)
-	require.ErrorIs(err, errTxAlreadyInMempool)
+	require.ErrorIs(err, errDuplicateTx)
 	mpool.Remove(txs)
 	require.NoError(mpool.Add(tx, postForkTime))
 	require.False(mpool.HasStakerTx(), "post fork there should not be staker txs anymore")
