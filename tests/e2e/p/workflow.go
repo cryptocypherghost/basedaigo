@@ -70,10 +70,6 @@ var _ = e2e.DescribePChain("[Workflow]", func() {
 			})
 
 			// create validator data
-			// Following D fork activation, start time is not specified
-			// in stakers txs
-			dummyStartTime := time.Unix(0, 0)
-
 			// Use a random node ID to ensure that repeated test runs
 			// will succeed against a persistent network.
 			validatorID, err := ids.ToNodeID(utils.RandomBytes(ids.NodeIDLen))
@@ -81,8 +77,7 @@ var _ = e2e.DescribePChain("[Workflow]", func() {
 
 			vdr := &txs.Validator{
 				NodeID: validatorID,
-				Start:  uint64(dummyStartTime.Unix()),
-				End:    uint64(dummyStartTime.Add(72 * time.Hour).Unix()),
+				End:    uint64(time.Unix(0, 0).Add(72 * time.Hour).Unix()), // D fork active, only duration matter
 				Wght:   minValStake,
 			}
 			rewardOwner := &secp256k1fx.OutputOwners{

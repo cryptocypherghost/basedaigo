@@ -22,7 +22,6 @@ func main() {
 	key := genesis.EWOQKey
 	uri := primary.LocalAPIURI
 	kc := secp256k1fx.NewKeychain(key)
-	dummyStartTime := time.Unix(0, 0)  // following D fork activation, start time is not set by stakerTxs
 	duration := 3 * 7 * 24 * time.Hour // 3 weeks
 	weight := 2_000 * units.Avax
 	validatorRewardAddr := key.Address()
@@ -60,8 +59,7 @@ func main() {
 	addValidatorTx, err := pWallet.IssueAddPermissionlessValidatorTx(
 		&txs.SubnetValidator{Validator: txs.Validator{
 			NodeID: nodeID,
-			Start:  uint64(dummyStartTime.Unix()),
-			End:    uint64(dummyStartTime.Add(duration).Unix()),
+			End:    uint64(time.Unix(0, 0).Add(duration).Unix()), // D fork active, only duration matter
 			Wght:   weight,
 		}},
 		nodePOP,

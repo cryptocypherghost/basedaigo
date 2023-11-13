@@ -108,16 +108,12 @@ var _ = ginkgo.Describe("[Staking Rewards]", func() {
 			weight            = 2_000 * units.Avax
 		)
 
-		// Following D fork activation, stakers start time is not set by stakersTxs
-		dummyStartTime := time.Unix(0, 0)
-		alphaValidatorEndTime := dummyStartTime.Add(validationPeriod)
 		ginkgo.By("adding alpha node as a validator", func() {
 			_, err := pWallet.IssueAddPermissionlessValidatorTx(
 				&txs.SubnetValidator{
 					Validator: txs.Validator{
 						NodeID: alphaNodeID,
-						Start:  uint64(dummyStartTime.Unix()),
-						End:    uint64(alphaValidatorEndTime.Unix()),
+						End:    uint64(time.Unix(0, 0).Add(validationPeriod).Unix()), // D fork active, only duration matter
 						Wght:   weight,
 					},
 					Subnet: constants.PrimaryNetworkID,
@@ -138,14 +134,12 @@ var _ = ginkgo.Describe("[Staking Rewards]", func() {
 			require.NoError(err)
 		})
 
-		betaValidatorEndTime := dummyStartTime.Add(validationPeriod)
 		ginkgo.By("adding beta node as a validator", func() {
 			_, err := pWallet.IssueAddPermissionlessValidatorTx(
 				&txs.SubnetValidator{
 					Validator: txs.Validator{
 						NodeID: betaNodeID,
-						Start:  uint64(dummyStartTime.Unix()),
-						End:    uint64(betaValidatorEndTime.Unix()),
+						End:    uint64(time.Unix(0, 0).Add(validationPeriod).Unix()), // D fork active, only duration matter
 						Wght:   weight,
 					},
 					Subnet: constants.PrimaryNetworkID,
@@ -171,8 +165,7 @@ var _ = ginkgo.Describe("[Staking Rewards]", func() {
 				&txs.SubnetValidator{
 					Validator: txs.Validator{
 						NodeID: alphaNodeID,
-						Start:  uint64(dummyStartTime.Unix()),
-						End:    uint64(dummyStartTime.Add(delegationPeriod).Unix()),
+						End:    uint64(time.Unix(0, 0).Add(delegationPeriod).Unix()), // D fork active, only duration matter
 						Wght:   weight,
 					},
 					Subnet: constants.PrimaryNetworkID,
@@ -192,8 +185,7 @@ var _ = ginkgo.Describe("[Staking Rewards]", func() {
 				&txs.SubnetValidator{
 					Validator: txs.Validator{
 						NodeID: betaNodeID,
-						Start:  uint64(dummyStartTime.Unix()),
-						End:    uint64(dummyStartTime.Add(delegationPeriod).Unix()),
+						End:    uint64(time.Unix(0, 0).Add(delegationPeriod).Unix()), // D fork active, only duration matter
 						Wght:   weight,
 					},
 					Subnet: constants.PrimaryNetworkID,
@@ -214,7 +206,7 @@ var _ = ginkgo.Describe("[Staking Rewards]", func() {
 		ginkgo.By("waiting until all validation periods are over")
 		// The beta validator was the last added and so has the latest end time. The
 		// delegation periods are shorter than the validation periods.
-		time.Sleep(time.Until(betaValidatorEndTime))
+		time.Sleep(time.Until(time.Now().Add(validationPeriod)))
 
 		pvmClient := platformvm.NewClient(alphaNode.GetProcessContext().URI)
 
