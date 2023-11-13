@@ -23,7 +23,7 @@ func main() {
 	uri := primary.LocalAPIURI
 	kc := secp256k1fx.NewKeychain(key)
 	subnetIDStr := "29uVeLPJB1eQJkzRemU8g8wZDw5uJRqpab5U2mX9euieVwiEbL"
-	startTime := time.Now().Add(time.Minute)
+	dummyStartTime := time.Unix(0, 0)  // following D fork activation, start time is not set by stakerTxs
 	duration := 2 * 7 * 24 * time.Hour // 2 weeks
 	weight := units.Schmeckle
 
@@ -63,8 +63,8 @@ func main() {
 	addValidatorTx, err := pWallet.IssueAddSubnetValidatorTx(&txs.SubnetValidator{
 		Validator: txs.Validator{
 			NodeID: nodeID,
-			Start:  uint64(startTime.Unix()),
-			End:    uint64(startTime.Add(duration).Unix()),
+			Start:  uint64(dummyStartTime.Unix()),
+			End:    uint64(dummyStartTime.Add(duration).Unix()),
 			Wght:   weight,
 		},
 		Subnet: subnetID,

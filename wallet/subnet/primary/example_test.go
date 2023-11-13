@@ -140,13 +140,13 @@ func ExampleWallet() {
 	log.Printf("issued transform subnet transaction %s in %s\n", transformSubnetTxID, time.Since(transformSubnetStartTime))
 
 	addPermissionlessValidatorStartTime := time.Now()
-	startTime := time.Now().Add(time.Minute)
+	dummyStartTime := time.Unix(0, 0) // following D fork activation, start time is not set by stakerTxs
 	addSubnetValidatorTx, err := pWallet.IssueAddPermissionlessValidatorTx(
 		&txs.SubnetValidator{
 			Validator: txs.Validator{
 				NodeID: genesis.LocalConfig.InitialStakers[0].NodeID,
-				Start:  uint64(startTime.Unix()),
-				End:    uint64(startTime.Add(5 * time.Second).Unix()),
+				Start:  uint64(dummyStartTime.Unix()),
+				End:    uint64(dummyStartTime.Add(5 * time.Second).Unix()),
 				Wght:   25 * units.MegaAvax,
 			},
 			Subnet: createSubnetTxID,
@@ -169,8 +169,8 @@ func ExampleWallet() {
 		&txs.SubnetValidator{
 			Validator: txs.Validator{
 				NodeID: genesis.LocalConfig.InitialStakers[0].NodeID,
-				Start:  uint64(startTime.Unix()),
-				End:    uint64(startTime.Add(5 * time.Second).Unix()),
+				Start:  uint64(dummyStartTime.Unix()),
+				End:    uint64(dummyStartTime.Add(5 * time.Second).Unix()),
 				Wght:   25 * units.MegaAvax,
 			},
 			Subnet: createSubnetTxID,
