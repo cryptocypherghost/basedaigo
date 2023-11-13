@@ -96,12 +96,16 @@ var _ = e2e.DescribePChain("[Interchain Workflow]", ginkgo.Label(e2e.UsesCChainL
 		require.NoError(err)
 
 		ginkgo.By("adding the new node as a validator", func() {
-			startTime := time.Now().Add(e2e.DefaultValidatorStartTimeDiff)
-			// Validation duration doesn't actually matter to this
-			// test - it is only ensuring that adding a validator
-			// doesn't break interchain transfer.
-			endTime := startTime.Add(30 * time.Second)
+			var (
+				// Validation duration doesn't actually matter to this
+				// test - it is only ensuring that adding a validator
+				// doesn't break interchain transfer.
+				vdrDuration = 30 * time.Second
 
+				// Following D fork activation, start time is not specified
+				// in stakers txs
+				dummyStartTime = time.Unix(0, 0)
+			)
 			rewardKey, err := secp256k1.NewPrivateKey()
 			require.NoError(err)
 
@@ -114,8 +118,8 @@ var _ = e2e.DescribePChain("[Interchain Workflow]", ginkgo.Label(e2e.UsesCChainL
 				&txs.SubnetValidator{
 					Validator: txs.Validator{
 						NodeID: nodeID,
-						Start:  uint64(startTime.Unix()),
-						End:    uint64(endTime.Unix()),
+						Start:  uint64(dummyStartTime.Unix()),
+						End:    uint64(dummyStartTime.Add(vdrDuration).Unix()),
 						Wght:   weight,
 					},
 					Subnet: constants.PrimaryNetworkID,
@@ -137,12 +141,16 @@ var _ = e2e.DescribePChain("[Interchain Workflow]", ginkgo.Label(e2e.UsesCChainL
 		})
 
 		ginkgo.By("adding a delegator to the new node", func() {
-			startTime := time.Now().Add(e2e.DefaultValidatorStartTimeDiff)
-			// Delegation duration doesn't actually matter to this
-			// test - it is only ensuring that adding a delegator
-			// doesn't break interchain transfer.
-			endTime := startTime.Add(15 * time.Second)
+			var (
+				// Delegation duration doesn't actually matter to this
+				// test - it is only ensuring that adding a delegator
+				// doesn't break interchain transfer.
+				dgrDuration = 15 * time.Second
 
+				// Following D fork activation, start time is not specified
+				// in stakers txs
+				dummyStartTime = time.Unix(0, 0)
+			)
 			rewardKey, err := secp256k1.NewPrivateKey()
 			require.NoError(err)
 
@@ -150,8 +158,8 @@ var _ = e2e.DescribePChain("[Interchain Workflow]", ginkgo.Label(e2e.UsesCChainL
 				&txs.SubnetValidator{
 					Validator: txs.Validator{
 						NodeID: nodeID,
-						Start:  uint64(startTime.Unix()),
-						End:    uint64(endTime.Unix()),
+						Start:  uint64(dummyStartTime.Unix()),
+						End:    uint64(dummyStartTime.Add(dgrDuration).Unix()),
 						Wght:   weight,
 					},
 					Subnet: constants.PrimaryNetworkID,

@@ -68,9 +68,11 @@ var _ = e2e.DescribePChain("[Workflow]", func() {
 				require.NoError(err)
 				require.GreaterOrEqual(pBalance, minBalance)
 			})
+
 			// create validator data
-			validatorStartTimeDiff := 30 * time.Second
-			vdrStartTime := time.Now().Add(validatorStartTimeDiff)
+			// Following D fork activation, start time is not specified
+			// in stakers txs
+			dummyStartTime := time.Unix(0, 0)
 
 			// Use a random node ID to ensure that repeated test runs
 			// will succeed against a persistent network.
@@ -79,8 +81,8 @@ var _ = e2e.DescribePChain("[Workflow]", func() {
 
 			vdr := &txs.Validator{
 				NodeID: validatorID,
-				Start:  uint64(vdrStartTime.Unix()),
-				End:    uint64(vdrStartTime.Add(72 * time.Hour).Unix()),
+				Start:  uint64(dummyStartTime.Unix()),
+				End:    uint64(dummyStartTime.Add(72 * time.Hour).Unix()),
 				Wght:   minValStake,
 			}
 			rewardOwner := &secp256k1fx.OutputOwners{
