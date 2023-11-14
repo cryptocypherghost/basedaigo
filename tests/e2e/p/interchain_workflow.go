@@ -99,7 +99,7 @@ var _ = e2e.DescribePChain("[Interchain Workflow]", ginkgo.Label(e2e.UsesCChainL
 			// Validation duration doesn't actually matter to this
 			// test - it is only ensuring that adding a validator
 			// doesn't break interchain transfer.
-			vdrDuration := 30 * time.Second
+			validatorDuration := 30 * time.Second
 			rewardKey, err := secp256k1.NewPrivateKey()
 			require.NoError(err)
 
@@ -112,7 +112,7 @@ var _ = e2e.DescribePChain("[Interchain Workflow]", ginkgo.Label(e2e.UsesCChainL
 				&txs.SubnetValidator{
 					Validator: txs.Validator{
 						NodeID: nodeID,
-						End:    uint64(time.Unix(0, 0).Add(vdrDuration).Unix()), // D fork active, only duration matter
+						End:    uint64(time.Unix(0, 0).Add(validatorDuration).Unix()), // D fork active, only duration matter
 						Wght:   weight,
 					},
 					Subnet: constants.PrimaryNetworkID,
@@ -137,7 +137,7 @@ var _ = e2e.DescribePChain("[Interchain Workflow]", ginkgo.Label(e2e.UsesCChainL
 			// Delegation duration doesn't actually matter to this
 			// test - it is only ensuring that adding a delegator
 			// doesn't break interchain transfer.
-			dgrDuration := 15 * time.Second
+			delegatorDuration := 15 * time.Second
 			rewardKey, err := secp256k1.NewPrivateKey()
 			require.NoError(err)
 
@@ -145,7 +145,7 @@ var _ = e2e.DescribePChain("[Interchain Workflow]", ginkgo.Label(e2e.UsesCChainL
 				&txs.SubnetValidator{
 					Validator: txs.Validator{
 						NodeID: nodeID,
-						End:    uint64(time.Unix(0, 0).Add(dgrDuration).Unix()), // D fork active, only duration matter
+						End:    uint64(time.Unix(0, 0).Add(delegatorDuration).Unix()), // D fork active, only duration matter
 						Wght:   weight,
 					},
 					Subnet: constants.PrimaryNetworkID,
