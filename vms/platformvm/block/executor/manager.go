@@ -5,6 +5,7 @@ package executor
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/ava-labs/avalanchego/ids"
 	"github.com/ava-labs/avalanchego/snow/consensus/snowman"
@@ -122,10 +123,42 @@ func (m *manager) VerifyTx(tx *txs.Tx) error {
 		return ErrChainNotSynced
 	}
 
-	return tx.Unsigned.Visit(&executor.MempoolTxVerifier{
-		Backend:       m.txExecutorBackend,
-		ParentID:      m.preferred,
-		StateVersions: m,
-		Tx:            tx,
+	state, err := state.NewDiff(m.preferred, m)
+	if err != nil {
+		return err
+	}
+
+	var (
+		parentTime  = state.GetTimestamp()
+		nextBlkTime = m.txExecutorBackend.Clk.Time()
+	)
+	if parentTime.After(nextBlkTime) {
+		nextBlkTime = parentTime
+	}
+	nextStakerChangeTime, err := executor.GetNextStakerChangeTime(state)
+	if err != nil {
+		return fmt.Errorf("could not calculate next staker change time: %w", err)
+	}
+	if !nextBlkTime.Before(nextStakerChangeTime) {
+		nextBlkTime = nextStakerChangeTime
+	}
+
+	changes, err := executor.AdvanceTimeTo(m.txExecutorBackend, state, nextBlkTime)
+	if err != nil {
+		return err
+	}
+	changes.Apply(state)
+	state.SetTimestamp(nextBlkTime)
+
+	err = tx.Unsigned.Visit(&executor.StandardTxExecutor{
+		Backend: m.txExecutorBackend,
+		State:   state,
+		Tx:      tx,
 	})
+	// We ignore [errFutureStakeTime] here because the time will be advanced
+	// when this transaction is issued.
+	if errors.Is(err, executor.ErrFutureStakeTime) {
+		return nil
+	}
+	return err
 }

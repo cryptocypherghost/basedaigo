@@ -189,14 +189,6 @@ func TestNewImportTx(t *testing.T) {
 
 			fakedParent := ids.GenerateTestID()
 			env.SetState(fakedParent, fakedState)
-
-			verifier := MempoolTxVerifier{
-				Backend:       &env.backend,
-				ParentID:      fakedParent,
-				StateVersions: env,
-				Tx:            tx,
-			}
-			require.NoError(tx.Unsigned.Visit(&verifier))
 		})
 	}
 }

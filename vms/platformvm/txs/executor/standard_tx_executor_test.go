@@ -175,7 +175,6 @@ func TestStandardTxExecutorAddDelegator(t *testing.T) {
 		setup                func(*environment)
 		AP3Time              time.Time
 		expectedExecutionErr error
-		expectedMempoolErr   error
 	}
 
 	tests := []test{
@@ -190,7 +189,6 @@ func TestStandardTxExecutorAddDelegator(t *testing.T) {
 			setup:                nil,
 			AP3Time:              defaultGenesisTime,
 			expectedExecutionErr: ErrPeriodMismatch,
-			expectedMempoolErr:   ErrPeriodMismatch,
 		},
 		{
 			description:          fmt.Sprintf("delegator should not be added more than (%s) in the future", MaxFutureStartTime),
@@ -203,7 +201,6 @@ func TestStandardTxExecutorAddDelegator(t *testing.T) {
 			setup:                nil,
 			AP3Time:              defaultGenesisTime,
 			expectedExecutionErr: ErrFutureStakeTime,
-			expectedMempoolErr:   nil,
 		},
 		{
 			description:          "validator not in the current or pending validator sets",
@@ -216,7 +213,6 @@ func TestStandardTxExecutorAddDelegator(t *testing.T) {
 			setup:                nil,
 			AP3Time:              defaultGenesisTime,
 			expectedExecutionErr: database.ErrNotFound,
-			expectedMempoolErr:   database.ErrNotFound,
 		},
 		{
 			description:          "delegator starts before validator",
@@ -229,7 +225,6 @@ func TestStandardTxExecutorAddDelegator(t *testing.T) {
 			setup:                addMinStakeValidator,
 			AP3Time:              defaultGenesisTime,
 			expectedExecutionErr: ErrPeriodMismatch,
-			expectedMempoolErr:   ErrPeriodMismatch,
 		},
 		{
 			description:          "delegator stops before validator",
@@ -242,7 +237,6 @@ func TestStandardTxExecutorAddDelegator(t *testing.T) {
 			setup:                addMinStakeValidator,
 			AP3Time:              defaultGenesisTime,
 			expectedExecutionErr: ErrPeriodMismatch,
-			expectedMempoolErr:   ErrPeriodMismatch,
 		},
 		{
 			description:          "valid",
@@ -255,7 +249,6 @@ func TestStandardTxExecutorAddDelegator(t *testing.T) {
 			setup:                addMinStakeValidator,
 			AP3Time:              defaultGenesisTime,
 			expectedExecutionErr: nil,
-			expectedMempoolErr:   nil,
 		},
 		{
 			description:          "starts delegating at current timestamp",
@@ -268,7 +261,6 @@ func TestStandardTxExecutorAddDelegator(t *testing.T) {
 			setup:                nil,
 			AP3Time:              defaultGenesisTime,
 			expectedExecutionErr: ErrTimestampNotBeforeStartTime,
-			expectedMempoolErr:   ErrTimestampNotBeforeStartTime,
 		},
 		{
 			description:   "tx fee paying key has no funds",
@@ -293,7 +285,6 @@ func TestStandardTxExecutorAddDelegator(t *testing.T) {
 			},
 			AP3Time:              defaultGenesisTime,
 			expectedExecutionErr: ErrFlowCheckFailed,
-			expectedMempoolErr:   ErrFlowCheckFailed,
 		},
 		{
 			description:          "over delegation before AP3",
@@ -306,7 +297,6 @@ func TestStandardTxExecutorAddDelegator(t *testing.T) {
 			setup:                addMaxStakeValidator,
 			AP3Time:              defaultValidateEndTime,
 			expectedExecutionErr: nil,
-			expectedMempoolErr:   nil,
 		},
 		{
 			description:          "over delegation after AP3",
@@ -319,7 +309,6 @@ func TestStandardTxExecutorAddDelegator(t *testing.T) {
 			setup:                addMaxStakeValidator,
 			AP3Time:              defaultGenesisTime,
 			expectedExecutionErr: ErrOverDelegated,
-			expectedMempoolErr:   ErrOverDelegated,
 		},
 	}
 
@@ -359,15 +348,6 @@ func TestStandardTxExecutorAddDelegator(t *testing.T) {
 			}
 			err = tx.Unsigned.Visit(&executor)
 			require.ErrorIs(err, tt.expectedExecutionErr)
-
-			mempoolExecutor := MempoolTxVerifier{
-				Backend:       &freshTH.backend,
-				ParentID:      lastAcceptedID,
-				StateVersions: freshTH,
-				Tx:            tx,
-			}
-			err = tx.Unsigned.Visit(&mempoolExecutor)
-			require.ErrorIs(err, tt.expectedMempoolErr)
 		})
 	}
 }
