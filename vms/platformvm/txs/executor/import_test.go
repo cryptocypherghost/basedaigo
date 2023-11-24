@@ -182,13 +182,17 @@ func TestNewImportTx(t *testing.T) {
 
 			require.Equal(env.config.TxFee, totalIn-totalOut)
 
-			fakedState, err := state.NewDiff(lastAcceptedID, env)
+			stateDiff, err := state.NewDiff(lastAcceptedID, env)
 			require.NoError(err)
 
-			fakedState.SetTimestamp(tt.timestamp)
+			stateDiff.SetTimestamp(tt.timestamp)
 
-			fakedParent := ids.GenerateTestID()
-			env.SetState(fakedParent, fakedState)
+			verifier := StandardTxExecutor{
+				Backend: &env.backend,
+				State:   stateDiff,
+				Tx:      tx,
+			}
+			require.NoError(tx.Unsigned.Visit(&verifier))
 		})
 	}
 }
