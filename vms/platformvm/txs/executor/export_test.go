@@ -11,6 +11,7 @@ import (
 
 	"github.com/ava-labs/avalanchego/ids"
 	"github.com/ava-labs/avalanchego/utils/crypto/secp256k1"
+	"github.com/ava-labs/avalanchego/vms/platformvm/state"
 )
 
 func TestNewExportTx(t *testing.T) {
@@ -49,7 +50,7 @@ func TestNewExportTx(t *testing.T) {
 		t.Run(tt.description, func(t *testing.T) {
 			require := require.New(t)
 
-			_, err := env.txBuilder.NewExportTx(
+			tx, err := env.txBuilder.NewExportTx(
 				defaultBalance-defaultTxFee, // Amount of tokens to export
 				tt.destinationChainID,
 				to,
@@ -57,6 +58,21 @@ func TestNewExportTx(t *testing.T) {
 				ids.ShortEmpty, // Change address
 			)
 			require.NoError(err)
+
+			fakedState, err := state.NewDiff(lastAcceptedID, env)
+			require.NoError(err)
+
+			fakedState.SetTimestamp(tt.timestamp)
+
+			fakedParent := ids.GenerateTestID()
+			env.SetState(fakedParent, fakedState)
+
+			verifier := StandardTxExecutor{
+				Backend: &env.backend,
+				State:   fakedState,
+				Tx:      tx,
+			}
+			require.NoError(tx.Unsigned.Visit(&verifier))
 		})
 	}
 }
