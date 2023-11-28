@@ -53,22 +53,11 @@ var _ = ginkgo.Describe("[Upgrade]", func() {
 		ginkgo.By(fmt.Sprintf("restarting all nodes with %q binary", avalancheGoExecPathToUpgradeTo))
 		for _, node := range network.Nodes {
 			ginkgo.By(fmt.Sprintf("restarting node %q with %q binary", node.ID, avalancheGoExecPathToUpgradeTo))
-			require.NoError(node.Stop())
+			require.NoError(node.Stop(e2e.DefaultContext(), true /* waitForStopped */))
 
-			// A node must start with sufficient bootstrap nodes to represent a quorum. Since the node's current
-			// bootstrap configuration may not satisfy this requirement (i.e. if on network start the node was one of
-			// the first validators), updating the node to bootstrap from all running validators maximizes the
-			// chances of a successful start.
-			//
-			// TODO(marun) Refactor node start to do this automatically
-			bootstrapIPs, bootstrapIDs, err := network.GetBootstrapIPsAndIDs()
-			require.NoError(err)
-			require.NotEmpty(bootstrapIDs)
-			node.Flags[config.BootstrapIDsKey] = strings.Join(bootstrapIDs, ",")
-			node.Flags[config.BootstrapIPsKey] = strings.Join(bootstrapIPs, ",")
-			require.NoError(node.WriteConfig())
+			node.DefaultRuntimeConfig.AvalancheGoPath = avalancheGoExecPathToUpgradeTo
 
-			require.NoError(node.Start(ginkgo.GinkgoWriter, avalancheGoExecPath))
+			require.NoError(network.StartNode(e2e.DefaultContext(), ginkgo.GinkgoWriter, node))
 
 			ginkgo.By(fmt.Sprintf("waiting for node %q to report healthy after restart", node.ID))
 			e2e.WaitForHealthy(node)
