@@ -181,6 +181,10 @@ func (n *network) issueTx(tx *txs.Tx) error {
 		return err
 	}
 
+	n.ctx.Log.Debug("[network.issueTx] added tx to mempool",
+		zap.Stringer("txID", txID),
+	)
+
 	n.mempool.RequestBuildBlock(false /*=emptyBlockPermitted*/)
 
 	return nil

@@ -257,6 +257,12 @@ func buildBlock(
 		}
 		builder.Mempool.Remove([]*txs.Tx{tx})
 
+		txID := tx.ID()
+		builder.txExecutorBackend.Ctx.Log.Debug("[builder.buildBlock] removed tx from mempool",
+			zap.Stringer("txID", txID),
+			zap.Error(err),
+		)
+
 		remainingSize -= len(tx.Bytes())
 		blockTxs = append(blockTxs, tx)
 	}

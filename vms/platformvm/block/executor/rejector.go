@@ -80,6 +80,11 @@ func (r *rejector) rejectBlock(b block.Block, blockType string) error {
 				zap.Error(err),
 			)
 		}
+
+		txID := tx.ID()
+		r.ctx.Log.Debug("[rejector.rejectBlock] adding tx from mempool",
+			zap.Stringer("txID", txID),
+		)
 	}
 
 	r.Mempool.RequestBuildBlock(false /*=emptyBlockPermitted*/)
