@@ -118,6 +118,10 @@ func (n *network) AppGossip(ctx context.Context, nodeID ids.NodeID, msgBytes []b
 	defer n.ctx.Lock.Unlock()
 
 	if reason := n.mempool.GetDropReason(txID); reason != nil {
+		n.ctx.Log.Debug("[network.AppGossip] mempool: dropped tx",
+			zap.Stringer("txID", txID),
+			zap.Error(reason),
+		)
 		// If the tx is being dropped - just ignore it
 		return nil
 	}
