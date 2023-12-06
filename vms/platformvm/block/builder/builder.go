@@ -251,6 +251,10 @@ func buildBlock(
 	)
 
 	for {
+		builder.txExecutorBackend.Ctx.Log.Debug("[builder.buildBlock] mempool: peeking tx",
+			zap.Int("remainingSize", remainingSize),
+			zap.Error(err),
+		)
 		tx := builder.Mempool.Peek(remainingSize)
 		if tx == nil {
 			break
@@ -258,7 +262,7 @@ func buildBlock(
 		builder.Mempool.Remove([]*txs.Tx{tx})
 
 		txID := tx.ID()
-		builder.txExecutorBackend.Ctx.Log.Debug("[builder.buildBlock] removed tx from mempool",
+		builder.txExecutorBackend.Ctx.Log.Debug("[builder.buildBlock] mempool: removed tx",
 			zap.Stringer("txID", txID),
 			zap.Error(err),
 		)

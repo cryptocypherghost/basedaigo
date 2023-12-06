@@ -82,7 +82,7 @@ func (r *rejector) rejectBlock(b block.Block, blockType string) error {
 		}
 
 		txID := tx.ID()
-		r.ctx.Log.Debug("[rejector.rejectBlock] adding tx from mempool",
+		r.ctx.Log.Debug("[rejector.rejectBlock] mempool: adding tx",
 			zap.Stringer("txID", txID),
 		)
 	}
