@@ -33,12 +33,14 @@ func (t *testTx) Unmarshal(bytes []byte) error {
 
 type testSet struct {
 	set   set.Set[*testTx]
+	ids   set.Set[ids.ID]
 	bloom *BloomFilter
 	onAdd func(tx *testTx)
 }
 
-func (t testSet) Add(gossipable *testTx) error {
+func (t *testSet) Add(gossipable *testTx) error {
 	t.set.Add(gossipable)
+	t.ids.Add(gossipable.id)
 	t.bloom.Add(gossipable)
 	if t.onAdd != nil {
 		t.onAdd(gossipable)
@@ -47,7 +49,11 @@ func (t testSet) Add(gossipable *testTx) error {
 	return nil
 }
 
-func (t testSet) Iterate(f func(gossipable *testTx) bool) {
+func (t *testSet) Has(gossipable *testTx) bool {
+	return t.ids.Contains(gossipable.id)
+}
+
+func (t *testSet) Iterate(f func(gossipable *testTx) bool) {
 	for tx := range t.set {
 		if !f(tx) {
 			return
@@ -55,7 +61,7 @@ func (t testSet) Iterate(f func(gossipable *testTx) bool) {
 	}
 }
 
-func (t testSet) GetFilter() ([]byte, []byte, error) {
+func (t *testSet) GetFilter() ([]byte, []byte, error) {
 	bloom, err := t.bloom.Bloom.MarshalBinary()
 	return bloom, t.bloom.Salt[:], err
 }
