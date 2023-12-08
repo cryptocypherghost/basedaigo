@@ -13,6 +13,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/snow/engine/common"
 	"github.com/ava-labs/avalanchego/utils/crypto/secp256k1"
 	"github.com/ava-labs/avalanchego/vms/components/avax"
 	"github.com/ava-labs/avalanchego/vms/platformvm/txs"
@@ -219,4 +220,35 @@ func TestDropExpiredStakerTxs(t *testing.T) {
 
 	minStartTime := time.Unix(9, 0)
 	require.Len(mempool.DropExpiredStakerTxs(minStartTime), 1)
+}
+
+func TestPeekTxs(t *testing.T) {
+	require := require.New(t)
+
+	registerer := prometheus.NewRegistry()
+	toEngine := make(chan common.Message, 100)
+	mempool, err := New("mempool", registerer, toEngine)
+	require.NoError(err)
+
+	testDecisionTxs, err := createTestDecisionTxs(1)
+	require.NoError(err)
+	testProposalTxs, err := createTestProposalTxs(1)
+	require.NoError(err)
+
+	require.Nil(mempool.Peek())
+
+	require.NoError(mempool.Add(testDecisionTxs[0]))
+	require.NoError(mempool.Add(testProposalTxs[0]))
+
+	require.Equal(mempool.Peek(), testDecisionTxs[0])
+	require.NotEqual(mempool.Peek(), testProposalTxs[0])
+
+	mempool.Remove([]*txs.Tx{testDecisionTxs[0]})
+
+	require.NotEqual(mempool.Peek(), testDecisionTxs[0])
+	require.Equal(mempool.Peek(), testProposalTxs[0])
+
+	mempool.Remove([]*txs.Tx{testProposalTxs[0]})
+
+	require.Nil(mempool.Peek())
 }
