@@ -92,6 +92,7 @@ func New(
 }
 
 func (b *builder) StartBlockTimer() {
+	b.txExecutorBackend.Ctx.Log.Debug("[builder.StartBlockTimer]: Called")
 	go func() {
 		timer := time.NewTimer(0)
 		defer timer.Stop()
@@ -125,6 +126,8 @@ func (b *builder) StartBlockTimer() {
 					break
 				}
 
+				b.txExecutorBackend.Ctx.Log.Debug("[builder.StartBlockTimer]: Calling [mempool.RequestBuildBlock] with emptyBlockPermitted=true")
+
 				// Block needs to be issued to advance time.
 				b.Mempool.RequestBuildBlock(true /*=emptyBlockPermitted*/)
 
@@ -144,6 +147,7 @@ func (b *builder) StartBlockTimer() {
 }
 
 func (b *builder) durationToSleep() (time.Duration, error) {
+	b.txExecutorBackend.Ctx.Log.Debug("[builder.durationToSleep]: Called")
 	// Grabbing the lock here enforces that this function is not called mid-way
 	// through modifying of the state.
 	b.txExecutorBackend.Ctx.Lock.Lock()
@@ -175,6 +179,7 @@ func (b *builder) durationToSleep() (time.Duration, error) {
 }
 
 func (b *builder) ResetBlockTimer() {
+	b.txExecutorBackend.Ctx.Log.Debug("[builder.ResetBlockTimer]: Called")
 	// Ensure that the timer will be reset at least once.
 	select {
 	case b.resetTimer <- struct{}{}:
@@ -183,6 +188,7 @@ func (b *builder) ResetBlockTimer() {
 }
 
 func (b *builder) ShutdownBlockTimer() {
+	b.txExecutorBackend.Ctx.Log.Debug("[builder.ShutdownBlockTimer]: Called")
 	b.closeOnce.Do(func() {
 		close(b.closed)
 	})
@@ -246,6 +252,8 @@ func buildBlock(
 	forceAdvanceTime bool,
 	parentState state.Chain,
 ) (block.Block, error) {
+	builder.txExecutorBackend.Ctx.Log.Debug("[builder.buildBlock]: Called")
+
 	// Try rewarding stakers whose staking period ends at the new chain time.
 	// This is done first to prioritize advancing the timestamp as quickly as
 	// possible.
