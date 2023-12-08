@@ -287,8 +287,8 @@ func buildBlock(
 			zap.Int("remainingSize", remainingSize),
 			zap.Error(err),
 		)
-		tx := builder.Mempool.Peek(remainingSize)
-		if tx == nil {
+		tx := builder.Mempool.Peek()
+		if tx == nil || len(tx.Bytes()) > remainingSize {
 			break
 		}
 		builder.Mempool.Remove([]*txs.Tx{tx})
