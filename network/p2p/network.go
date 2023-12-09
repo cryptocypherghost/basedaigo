@@ -172,12 +172,10 @@ func (n *Network) NewClient(handlerID uint64, options ...ClientOption) (*Client,
 				peers: n.Peers,
 			},
 		},
-		clientMetrics: &clientMetrics{
-			appRequestFailedTime:           appRequestFailedTime,
-			appResponseTime:                appResponseTime,
-			crossChainAppRequestFailedTime: crossChainAppRequestFailedTime,
-			crossChainAppResponseTime:      crossChainAppResponseTime,
-		},
+		appRequestFailedTime:           appRequestFailedTime,
+		appResponseTime:                appResponseTime,
+		crossChainAppRequestFailedTime: crossChainAppRequestFailedTime,
+		crossChainAppResponseTime:      crossChainAppResponseTime,
 	}
 
 	for _, option := range options {

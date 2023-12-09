@@ -40,20 +40,16 @@ type CrossChainAppResponseCallback func(
 	err error,
 )
 
-type clientMetrics struct {
+type Client struct {
+	handlerID                      uint64
+	handlerPrefix                  []byte
+	router                         *router
+	sender                         common.AppSender
 	appRequestFailedTime           metric.Averager
 	appResponseTime                metric.Averager
 	crossChainAppRequestFailedTime metric.Averager
 	crossChainAppResponseTime      metric.Averager
-}
-
-type Client struct {
-	handlerID     uint64
-	handlerPrefix []byte
-	router        *router
-	sender        common.AppSender
-	clientMetrics *clientMetrics
-	options       *clientOptions
+	options                        *clientOptions
 }
 
 // AppRequestAny issues an AppRequest to an arbitrary node decided by Client.
@@ -105,8 +101,9 @@ func (c *Client) AppRequest(
 		}
 
 		c.router.pendingAppRequests[requestID] = pendingAppRequest{
-			callback: onResponse,
-			metrics:  c.clientMetrics,
+			callback:             onResponse,
+			appRequestFailedTime: c.appRequestFailedTime,
+			appResponseTime:      c.appResponseTime,
 		}
 		c.router.requestID += 2
 	}
@@ -168,8 +165,9 @@ func (c *Client) CrossChainAppRequest(
 	}
 
 	c.router.pendingCrossChainAppRequests[requestID] = pendingCrossChainAppRequest{
-		callback: onResponse,
-		metrics:  c.clientMetrics,
+		callback:                       onResponse,
+		crossChainAppRequestFailedTime: c.crossChainAppRequestFailedTime,
+		crossChainAppResponseTime:      c.crossChainAppResponseTime,
 	}
 	c.router.requestID += 2
 

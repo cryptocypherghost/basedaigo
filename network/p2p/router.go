@@ -36,13 +36,15 @@ type serverMetrics struct {
 }
 
 type pendingAppRequest struct {
-	callback AppResponseCallback
-	metrics  *clientMetrics
+	callback             AppResponseCallback
+	appRequestFailedTime metric.Averager
+	appResponseTime      metric.Averager
 }
 
 type pendingCrossChainAppRequest struct {
-	callback CrossChainAppResponseCallback
-	metrics  *clientMetrics
+	callback                       CrossChainAppResponseCallback
+	crossChainAppRequestFailedTime metric.Averager
+	crossChainAppResponseTime      metric.Averager
 }
 
 // meteredHandler emits metrics for a Handler
@@ -184,7 +186,7 @@ func (r *router) AppRequestFailed(ctx context.Context, nodeID ids.NodeID, reques
 	}
 
 	pending.callback(ctx, nodeID, nil, ErrAppRequestFailed)
-	pending.metrics.appRequestFailedTime.Observe(float64(time.Since(start)))
+	pending.appRequestFailedTime.Observe(float64(time.Since(start)))
 	return nil
 }
 
@@ -202,7 +204,7 @@ func (r *router) AppResponse(ctx context.Context, nodeID ids.NodeID, requestID u
 	}
 
 	pending.callback(ctx, nodeID, response, nil)
-	pending.metrics.appResponseTime.Observe(float64(time.Since(start)))
+	pending.appResponseTime.Observe(float64(time.Since(start)))
 	return nil
 }
 
@@ -277,7 +279,7 @@ func (r *router) CrossChainAppRequestFailed(ctx context.Context, chainID ids.ID,
 	}
 
 	pending.callback(ctx, chainID, nil, ErrAppRequestFailed)
-	pending.metrics.crossChainAppRequestFailedTime.Observe(float64(time.Since(start)))
+	pending.crossChainAppRequestFailedTime.Observe(float64(time.Since(start)))
 	return nil
 }
 
@@ -295,7 +297,7 @@ func (r *router) CrossChainAppResponse(ctx context.Context, chainID ids.ID, requ
 	}
 
 	pending.callback(ctx, chainID, response, nil)
-	pending.metrics.crossChainAppResponseTime.Observe(float64(time.Since(start)))
+	pending.crossChainAppResponseTime.Observe(float64(time.Since(start)))
 	return nil
 }
 
