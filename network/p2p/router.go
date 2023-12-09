@@ -29,12 +29,6 @@ var (
 	_ common.AppHandler = (*router)(nil)
 )
 
-type serverMetrics struct {
-	appRequestTime           metric.Averager
-	appGossipTime            metric.Averager
-	crossChainAppRequestTime metric.Averager
-}
-
 type pendingAppRequest struct {
 	callback             AppResponseCallback
 	appRequestFailedTime metric.Averager
@@ -50,7 +44,9 @@ type pendingCrossChainAppRequest struct {
 // meteredHandler emits metrics for a Handler
 type meteredHandler struct {
 	*responder
-	*serverMetrics
+	appRequestTime           metric.Averager
+	appGossipTime            metric.Averager
+	crossChainAppRequestTime metric.Averager
 }
 
 // router routes incoming application messages to the corresponding registered
@@ -134,11 +130,9 @@ func (r *router) addHandler(handlerID uint64, handler Handler) error {
 			log:       r.log,
 			sender:    r.sender,
 		},
-		serverMetrics: &serverMetrics{
-			appRequestTime:           appRequestTime,
-			appGossipTime:            appGossipTime,
-			crossChainAppRequestTime: crossChainAppRequestTime,
-		},
+		appRequestTime:           appRequestTime,
+		appGossipTime:            appGossipTime,
+		crossChainAppRequestTime: crossChainAppRequestTime,
 	}
 
 	return nil
@@ -168,7 +162,7 @@ func (r *router) AppRequest(ctx context.Context, nodeID ids.NodeID, requestID ui
 		return err
 	}
 
-	handler.serverMetrics.appRequestTime.Observe(float64(time.Since(start)))
+	handler.appRequestTime.Observe(float64(time.Since(start)))
 	return nil
 }
 
@@ -227,7 +221,7 @@ func (r *router) AppGossip(ctx context.Context, nodeID ids.NodeID, gossip []byte
 
 	handler.AppGossip(ctx, nodeID, parsedMsg)
 
-	handler.serverMetrics.appGossipTime.Observe(float64(time.Since(start)))
+	handler.appGossipTime.Observe(float64(time.Since(start)))
 	return nil
 }
 
@@ -261,7 +255,7 @@ func (r *router) CrossChainAppRequest(
 		return err
 	}
 
-	handler.serverMetrics.crossChainAppRequestTime.Observe(float64(time.Since(start)))
+	handler.crossChainAppRequestTime.Observe(float64(time.Since(start)))
 	return nil
 }
 
