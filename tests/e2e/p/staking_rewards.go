@@ -94,16 +94,16 @@ var _ = ginkgo.Describe("[Staking Rewards]", func() {
 		pWallet := baseWallet.P()
 
 		ginkgo.By("retrieving alpha node id and pop")
-		alphaInfoClient := info.NewClient(alphaNode.NodeProcessContext.URI)
+		alphaInfoClient := info.NewClient(alphaNode.URI)
 		alphaNodeID, alphaPOP, err := alphaInfoClient.GetNodeID(e2e.DefaultContext())
 		require.NoError(err)
 
 		ginkgo.By("retrieving beta node id and pop")
-		betaInfoClient := info.NewClient(betaNode.NodeProcessContext.URI)
+		betaInfoClient := info.NewClient(betaNode.URI)
 		betaNodeID, betaPOP, err := betaInfoClient.GetNodeID(e2e.DefaultContext())
 		require.NoError(err)
 
-		pvmClient := platformvm.NewClient(alphaNode.NodeProcessContext.URI)
+		pvmClient := platformvm.NewClient(alphaNode.URI)
 
 		const (
 			delegationPercent = 0.10 // 10%

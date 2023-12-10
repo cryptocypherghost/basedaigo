@@ -66,7 +66,7 @@ func checkConnectedPeers(existingNodes []*tmpnet.Node, newNode *tmpnet.Node) {
 	require := require.New(ginkgo.GinkgoT())
 
 	// Collect the node ids of the new node's peers
-	infoClient := info.NewClient(newNode.NodeProcessContext.URI)
+	infoClient := info.NewClient(newNode.URI)
 	peers, err := infoClient.Peers(e2e.DefaultContext())
 	require.NoError(err)
 	peerIDs := set.NewSet[ids.NodeID](len(existingNodes))
@@ -79,7 +79,7 @@ func checkConnectedPeers(existingNodes []*tmpnet.Node, newNode *tmpnet.Node) {
 		require.True(peerIDs.Contains(existingNode.ID))
 
 		// Check that the new node is a peer
-		infoClient := info.NewClient(existingNode.NodeProcessContext.URI)
+		infoClient := info.NewClient(existingNode.URI)
 		peers, err := infoClient.Peers(e2e.DefaultContext())
 		require.NoError(err)
 		isPeer := false
