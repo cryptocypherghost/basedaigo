@@ -33,7 +33,7 @@ var (
 )
 
 type TestData struct {
-	FundedKeys []*secp256k1.PrivateKey
+	PreFundedKeys []*secp256k1.PrivateKey
 }
 
 // http server allocating resources to tests potentially executing in parallel
@@ -68,14 +68,14 @@ func (s *testDataServer) allocateKeys(w http.ResponseWriter, r *http.Request) {
 	defer s.lock.Unlock()
 
 	// Only fulfill requests for available keys
-	if keyCount > len(s.FundedKeys) {
+	if keyCount > len(s.PreFundedKeys) {
 		http.Error(w, requestedKeyCountExceedsAvailable, http.StatusInternalServerError)
 		return
 	}
 
 	// Allocate the requested number of keys
-	remainingKeys := len(s.FundedKeys) - keyCount
-	allocatedKeys := s.FundedKeys[remainingKeys:]
+	remainingKeys := len(s.PreFundedKeys) - keyCount
+	allocatedKeys := s.PreFundedKeys[remainingKeys:]
 
 	keysDoc := &keysDocument{
 		Keys: allocatedKeys,
@@ -88,7 +88,7 @@ func (s *testDataServer) allocateKeys(w http.ResponseWriter, r *http.Request) {
 
 	// Forget the allocated keys
 	utils.ZeroSlice(allocatedKeys)
-	s.FundedKeys = s.FundedKeys[:remainingKeys]
+	s.PreFundedKeys = s.PreFundedKeys[:remainingKeys]
 }
 
 // Serve test data via http to ensure allocation is synchronized even when
@@ -124,7 +124,7 @@ func ServeTestData(testData TestData) (string, error) {
 
 // Retrieve the specified number of funded test keys from the provided URI. A given
 // key is allocated at most once during the life of the test data server.
-func AllocateFundedKeys(baseURI string, count int) ([]*secp256k1.PrivateKey, error) {
+func AllocatePreFundedKeys(baseURI string, count int) ([]*secp256k1.PrivateKey, error) {
 	if count <= 0 {
 		return nil, errInvalidKeyCount
 	}
