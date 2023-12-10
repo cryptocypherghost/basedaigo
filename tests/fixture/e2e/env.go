@@ -107,7 +107,7 @@ func (te *TestEnvironment) GetNetwork() tmpnet.Network {
 func (te *TestEnvironment) AllocatePreFundedKeys(count int) []*secp256k1.PrivateKey {
 	keys, err := fixture.AllocatePreFundedKeys(te.TestDataServerURI, count)
 	te.require.NoError(err)
-	tests.Outf("{{blue}} allocated funded key(s): %+v{{/}}\n", keys)
+	tests.Outf("{{blue}} allocated pre-funded key(s): %+v{{/}}\n", keys)
 	return keys
 }
 
