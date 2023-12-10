@@ -122,7 +122,7 @@ func ServeTestData(testData TestData) (string, error) {
 	return address, nil
 }
 
-// Retrieve the specified number of funded test keys from the provided URI. A given
+// Retrieve the specified number of pre-funded test keys from the provided URI. A given
 // key is allocated at most once during the life of the test data server.
 func AllocatePreFundedKeys(baseURI string, count int) ([]*secp256k1.PrivateKey, error) {
 	if count <= 0 {
@@ -144,13 +144,13 @@ func AllocatePreFundedKeys(baseURI string, count int) ([]*secp256k1.PrivateKey, 
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("failed to request funded keys: %w", err)
+		return nil, fmt.Errorf("failed to request pre-funded keys: %w", err)
 	}
 	defer resp.Body.Close()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return nil, fmt.Errorf("failed to read response for funded keys: %w", err)
+		return nil, fmt.Errorf("failed to read response for pre-funded keys: %w", err)
 	}
 	if resp.StatusCode != http.StatusOK {
 		if strings.TrimSpace(string(body)) == requestedKeyCountExceedsAvailable {
@@ -161,7 +161,7 @@ func AllocatePreFundedKeys(baseURI string, count int) ([]*secp256k1.PrivateKey, 
 
 	keysDoc := &keysDocument{}
 	if err := json.Unmarshal(body, keysDoc); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal funded keys: %w", err)
+		return nil, fmt.Errorf("failed to unmarshal pre-funded keys: %w", err)
 	}
 	return keysDoc.Keys, nil
 }
