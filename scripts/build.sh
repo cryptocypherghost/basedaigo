@@ -34,7 +34,7 @@ go mod download
 build_args="$race"
 
 # Build avalanchego
-"$AVALANCHE_PATH"/scripts/build_avalanche.sh $build_args
+"$AVALANCHE_PATH"/scripts/build_basedai.sh $build_args
 
 # Exit build successfully if the AvalancheGo binary is created successfully
 if [[ -f "$avalanchego_path" ]]; then

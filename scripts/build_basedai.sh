@@ -3,9 +3,9 @@
 set -euo pipefail
 
 print_usage() {
-  printf "Usage: build_avalanche [OPTIONS]
+  printf "Usage: build_basedai [OPTIONS]
 
-  Build avalanchego
+  Build basedaigo
 
   Options:
 
@@ -56,5 +56,5 @@ AVALANCHE_PATH=$( cd "$( dirname "${BASH_SOURCE[0]}" )"; cd .. && pwd )
 source "$AVALANCHE_PATH"/scripts/constants.sh
 
 build_args="$race"
-echo "Building AvalancheGo..."
+echo "Building BasedAIGo..."
 go build $build_args -ldflags "-X github.com/ava-labs/avalanchego/version.GitCommit=$git_commit $static_ld_flags" -o "$avalanchego_path" "$AVALANCHE_PATH/main/"*.go

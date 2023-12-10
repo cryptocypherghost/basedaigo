@@ -6,7 +6,7 @@
 AVALANCHE_PATH=$( cd "$( dirname "${BASH_SOURCE[0]}" )"; cd .. && pwd ) # Directory above this script
 
 # Where AvalancheGo binary goes
-avalanchego_path="$AVALANCHE_PATH/build/avalanchego"
+avalanchego_path="$AVALANCHE_PATH/build/basedaigo"
 
 # Avalabs docker hub
 # avaplatform/avalanchego - defaults to local as to avoid unintentional pushes
