@@ -121,7 +121,7 @@ network, _ := tmpnet.StartNetwork(
 ```
 
 Further examples of code-based usage are located in the [e2e
-tests](../../../e2e/e2e_test.go).
+tests](../../e2e/e2e_test.go).
 
 ## Networking configuration
 
